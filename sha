@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+
+Reset='\033[0m'
+Green='\e[32m'
+Red='\e[31m'
+Cyan='\e[36m'
+White='\e[97m'
+Reset='\e[0m'
+
+# website or favicon file
+TYPE=$1
+
+function httpieCheck {
+  if dpkg -l httpie >/dev/null; then
+    return
+  else
+    echo -e ${Red}"[!] HTTPie not found, installing..."${Reset}
+    sudo apt-get install httpie -y
+}
+
+function start {
+  if [ -f "${TYPE}" ]; then
+     selectFile
+   else
+     selectSite
+   fi
+}
+
+function selectFile {
+  read -p ${Cyan}"Select .ico file to inspect:"${Reset} file
+  getFavicon(${file})
+}
+
+function selectSite {
+  read -p ${Cyan}"URL to inspect:"${Reset} url
+  getFavicon(${url})
+}
+
+# func 1: get favicon (.ico) from url
+function getFavicon(source) {
+  if [ -f ${source} ] then
+    toSha(${source})
+  else
+    wget "${source}/favicon.ico"
+    wget "https://www.google.com/s2/favicons?domain=${source}"
+
+    grep -o 'href="http[^"]*ico"' # use with | to extract location of favicon from html file
+    # http <examplesite> | grep -o 'href="http[^"]*ico"' | sed 's/href="\(.*\)"/\1/' | { while read url ; do http -d $url ; done ; }
+  fi
+}
+
+
+# func 2: get sha256 from ico
+function toSha(file) {
+  sha256sum ${file} > ${file}_SHA256 # https://www.baeldung.com/linux/sha-256-from-command-line
+  sha256sum --check ${file}_SHA256
+}
+
+# func 3: shodan api?
+function explore(sum) {
+
+}
+
+start
